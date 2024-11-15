@@ -1,0 +1,9 @@
+---
+- name: Creating authorities ...
+  hosts:
+    - 127.0.0.1
+  vars:
+    run: create-authority
+  roles:
+    - install
+    - generate

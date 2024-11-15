@@ -1,0 +1,42 @@
+---
+generate_pki_defaults:
+
+  defaults:
+    certificate_signing_request: # CSR, see https://en.wikipedia.org/wiki/Certificate_signing_request
+      common_name: # CN
+      country: # C
+      locality: # L
+      organization: # O
+      organizational_unit: # OU
+      state: # ST
+      email_address: # EMAIL
+    expiry_years: 10
+    key:
+      algorithm: rsa
+      size: 4096
+
+    # Create pkcs12 archives for the certificates
+    pkcs12:
+      enabled: false
+      password: # leave blank to skip password protection
+
+    # Create Java keystore for the certificates
+    keystore:
+      name: # Default is the name of the authority
+      enabled: false
+      password: # leave blank to skip password protection
+      # Import the full chain including the root CA. Set false
+      # to include only the intermediate CA (not recommended).
+      use_full_chain: true
+
+    # Create Java truststore for the certificates
+    truststore:
+      enabled: false
+      alias: # Default is the name of the authority
+      password: # leave blank to skip password protection
+      # Import the full chain including the root CA. Set false
+      # to include only the intermediate CA (not recommended).
+      use_full_chain: true
+
+  authorities: []
+  certificates: []

@@ -1,0 +1,24 @@
+---
+- name: Print cfssl infos
+  ansible.builtin.debug:
+    msg: Installing CFSSL binary {{ cfssl_binary.key }} from {{ cfssl_binary.value }} ...
+
+- name: Check if CFSSL binary exists ...
+  ansible.builtin.stat:
+    path: "{{ cfssl.install_dir }}/{{ cfssl_binary.value | basename }}"
+  register: cfssl_binary_stat
+
+- name: Downloading CFSSL binary ...
+  ansible.builtin.get_url:
+    url: "{{ cfssl_binary.value }}"
+    dest: "{{ cfssl.install_dir }}/"
+    mode: "0755"
+  when: not cfssl_binary_stat.stat.exists
+
+- name: Installing CFSSL command ...
+  ansible.builtin.file:
+    src: "{{ cfssl.install_dir }}/{{ cfssl_binary.value | basename }}"
+    dest: "{{ cfssl.bin_dir }}/{{ cfssl_binary.key }}"
+    force: true
+    state: link
+  when: not cfssl_binary_stat.stat.exists

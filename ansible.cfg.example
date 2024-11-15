@@ -1,0 +1,16 @@
+[defaults]
+
+remote_user = YOUR_REMOTE_USER
+
+ansible_managed = File is managed by Ansible. Please do not change it manually. Changes will be overwritten.
+#roles_path =
+host_key_checking = True
+log_path = ./ansible.log
+
+#  See README.md for more information on how to use vault
+vault_encrypt_identity = example-vault-key
+vault_identity = example-vault-key
+vault_password_file = .vaultpassword
+
+# Silence deprecation warnings
+deprecation_warnings=False

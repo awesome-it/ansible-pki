@@ -1,0 +1,61 @@
+- name: Printing infos ...
+  ansible.builtin.debug:
+    msg: "{{ item }}"
+  with_items:
+    - "out_dir: {{ out_dir }} (type: {{ out_dir | type_debug }})"
+    - "archive: {{ archive }} (type: {{ archive | type_debug }})"
+    - "encrypted_archive {{ encrypted_archive }} (type: {{ encrypted_archive | type_debug }})"
+
+- name: Checking parameters to encrypt PKI archive ...
+  block:
+    - name: Checking for out_dir to be defined ...
+      ansible.builtin.assert:
+        that:
+          - out_dir is defined
+        fail_msg: "Parameter 'out_dir' must be defined"
+    - name: Checking for archive to be defined ...
+      ansible.builtin.assert:
+        that:
+          - archive is defined
+        fail_msg: "Parameter 'archive' must be defined"
+    - name: Checking for encrypted_archive to be defined ...
+      ansible.builtin.assert:
+        that:
+          - encrypted_archive is defined
+        fail_msg: "Parameter 'encrypted_archive' must be defined"
+
+- name: Make sure that the destination path does not exist yet ...
+  block:
+    - name: Stating destination path ...
+      ansible.builtin.stat:
+        path: "{{ encrypted_archive }}"
+      register: encrypted_archive_stat
+    - name: Make sure that the destination path does not exist ...
+      ansible.builtin.assert:
+        that:
+          - encrypted_archive_stat.stat.exists == false
+        fail_msg: "Destination path \"{{ encrypted_archive }}\" already exists. Remove it by hand or set \"force: true\" to overwrite."
+      when: force is not defined or force is false
+
+- name: Archiving and encrypting PKI from ...
+  block:
+    - name: Creating archive ...
+      community.general.archive:
+        path: "{{ out_dir }}"
+        dest: "{{ archive }}"
+        format: gz
+        mode: "0600"
+
+    - name: Encrypting archive ...
+      ansible.builtin.command:
+        chdir: "{{ playbook_dir }}"
+        cmd: "ansible-vault encrypt {{ archive }} --output {{ encrypted_archive }}"
+        creates: "{{ encrypted_archive }}"
+
+    - name: Removing unencrypted files ...
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: absent
+      with_items:
+        - "{{ out_dir }}"
+        - "{{ archive }}"

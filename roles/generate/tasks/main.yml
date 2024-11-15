@@ -1,0 +1,37 @@
+---
+- name: Collecting facts ...
+  ansible.builtin.set_fact:
+    pki: "{{ generate_pki_defaults | combine(pki if pki is defined else {}, recursive=True) }}"
+    out_dir: "{{ playbook_dir }}/out/{{ hostvars[inventory_hostname]['group_names'][0] }}"
+  tags:
+    - create_authority
+    - create_certificate
+
+- name: Create out dir ...
+  ansible.builtin.file:
+    path: "{{ out_dir }}"
+    state: directory
+    recurse: true
+  tags:
+    - create_authority
+    - create_certificate
+
+- name: Create certificate authority ...
+  ansible.builtin.include_tasks:
+    file: create_authority.yml
+  tags:
+    - create_authority
+  loop: "{{ pki.authorities }}"
+  loop_control:
+    loop_var: authority
+  when: run is not defined or run == "create-authority"
+
+- name: Create certificate ...
+  ansible.builtin.include_tasks:
+    file: create_certificate.yml
+  tags:
+    - create_certificate
+  loop: "{{ pki.certificates }}"
+  loop_control:
+    loop_var: certificate
+  when: run is not defined or run == "create-certificate"

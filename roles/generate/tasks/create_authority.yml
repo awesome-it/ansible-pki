@@ -1,0 +1,91 @@
+---
+- name: Create certificate signing request for CA ...
+  block:
+    - name: Setting facts ...
+      ansible.builtin.set_fact:
+        csr: "{{ pki.defaults.certificate_signing_request | combine(authority.get('certificate_signing_request', {}), recursive=True) }}"
+        expiry_years: "{{ authority.get('expiry_years', pki.defaults.expiry_years) }}"
+        key: "{{ pki.defaults.key | combine(authority.get('key', {}), recursive=True) }}"
+        is_authority: true
+        dest: "{{ authority.name }}-ca-csr.json"
+    - name: Including create_csr.yml ...
+      ansible.builtin.include_tasks:
+        file: create_csr.yml
+
+- name: Create config for CA certificate ...
+  block:
+    - name: Settings facts ...
+      ansible.builtin.set_fact:
+        profiles: "{{ pki.defaults.get('signing_profiles', {}) | combine(authority.get('signing_profiles', {}), recursive=True) }}"
+        dest: "{{ authority.name }}-ca-config.json"
+    - name: Including create_config.yml ...
+      ansible.builtin.include_tasks:
+        file: create_config.yml
+
+- name: Generate CA certificate ...
+  block:
+    - name: Printing info ...
+      ansible.builtin.debug:
+        msg: Generating CA certificate for "{{ authority.name }}" ...
+    - name: Invoking "cfssl gencert" ...
+      ansible.builtin.shell:
+        cmd: |
+          set -o pipefail
+          {{ cfssl.bin_dir }}/cfssl gencert -initca {{ out_dir }}/{{ authority.name }}-ca-csr.json | \
+          {{ cfssl.bin_dir }}/cfssl-json -bare {{ out_dir }}/{{ authority.name }}-ca
+        creates: "{{ out_dir }}/{{ authority.name }}-ca.pem"
+
+- name: Signing CA certificate ...
+  when: authority.sign_by is defined
+  block:
+    - name: Printing info ...
+      ansible.builtin.debug:
+        msg: Signing certificate for "{{ authority.name }}" with "{{ authority.sign_by }}" ...
+    - name: Invoking "cfssl sign" ...
+      ansible.builtin.shell:
+        cmd: |
+          set -o pipefail
+          {{ cfssl.bin_dir }}/cfssl sign \
+            -ca {{ out_dir }}/{{ authority.sign_by.name }}-ca.pem \
+            -ca-key {{ out_dir }}/{{ authority.sign_by.name }}-ca-key.pem \
+            -config {{ out_dir }}/{{ authority.sign_by.name }}-ca-config.json \
+            -profile {{ authority.sign_by.profile }} {{ out_dir }}/{{ authority.name }}-ca.csr \
+            2> {{ out_dir }}/{{ authority.name }}-sign.log | \
+          {{ cfssl.bin_dir }}/cfssl-json -bare {{ out_dir }}/{{ authority.name }}-ca
+        creates: "{{ out_dir }}/{{ authority.name }}-sign.log"
+    - name: Checking certificates to create a full chain ...
+      block:
+        - name: Checking sign_by certificate ...
+          ansible.builtin.stat:
+            path: "{{ out_dir }}/{{ authority.sign_by.name }}-ca.pem"
+          register: result
+          failed_when: result.stat.exists == false
+        - name: Checking ca certificate ...
+          ansible.builtin.stat:
+            path: "{{ out_dir }}/{{ authority.name }}-ca.pem"
+          register: result
+          failed_when: result.stat.exists == false
+    - name: Generating full chain ...
+      ansible.builtin.shell:
+        cmd: |
+          cat {{ out_dir }}/{{ authority.sign_by.name }}-ca.pem \
+              {{ out_dir }}/{{ authority.name }}-ca.pem \
+            > {{ out_dir }}/{{ authority.name }}-full-chain.pem
+        creates: "{{ out_dir }}/{{ authority.name }}-full-chain.pem"
+
+- name: Updating facts ...
+  ansible.builtin.set_fact:
+    truststore: "{{ pki.defaults.truststore | combine(authority.get('truststore', {}), recursive=True) }}"
+
+- name: Creating Java TrustStore from authority certificate ...
+  when: truststore.enabled
+  block:
+    - name: Updating facts ...
+      ansible.builtin.set_fact:
+        alias: "{{ truststore.alias | default(authority.name) }}"
+        password: "{{ truststore.password | default('') }}"
+        ca: "{{ out_dir }}/{{ authority.name + '-full-chain.pem' if truststore.get('use_full_chain', False) else '.pem' }}"
+        dest: "{{ out_dir }}/{{ authority.name + '-full-chain' if truststore.get('use_full_chain', False) else '' }}.truststore.jks"
+    - name: Including create_truststore.yml ...
+      ansible.builtin.include_tasks:
+        file: create_truststore.yml

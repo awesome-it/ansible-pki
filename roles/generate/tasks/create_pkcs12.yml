@@ -1,0 +1,54 @@
+---
+- name: Printing infos ...
+  ansible.builtin.debug:
+    msg: "{{ item }}"
+  with_items:
+    - "cert: {{ cert }} (type: {{ cert | type_debug }})"
+    - "key: {{ key }} (type: {{ key | type_debug }})"
+    - "ca: {{ ca }} (type: {{ ca | type_debug }})"
+    - "dest: {{ dest }} (type: {{ dest | type_debug }})"
+
+- name: Checking for OpenSSL binary to be available ...
+  ansible.builtin.command:
+    cmd: which openssl
+  register: openssl_bin
+  changed_when: false
+
+- name: Checking parameters to create a PKCS#12 archive ...
+  block:
+    - name: Checking for openssl binary ...
+      ansible.builtin.assert:
+        that:
+          - openssl_bin.rc == 0
+        fail_msg: OpenSSL binary not found but is required to create PKCS#12 archives
+    - name: Checking for cert to be defined ...
+      ansible.builtin.assert:
+        that:
+          - cert is defined
+        fail_msg: Parameter 'cert' must be defined as a path to a certificate to include
+    - name: Checking for key to be defined ...
+      ansible.builtin.assert:
+        that:
+          - key is defined
+        fail_msg: Parameter 'key' must be defined as a path to a certificate key to include
+    - name: Checking for ca to be defined ...
+      ansible.builtin.assert:
+        that:
+          - ca is defined
+        fail_msg: Parameter 'ca' must be defined as a path to a authority certificate to include
+    - name: Checking for dest to be defined ...
+      ansible.builtin.assert:
+        that:
+          - dest is defined
+        fail_msg: Parameter 'dest' must be defined
+
+- name: Invoking openssl ...
+  ansible.builtin.shell:
+    cmd: |
+      openssl pkcs12 -export \
+        -inkey {{ key }} \
+        -in {{ cert }} \
+        -certfile {{ ca }} \
+        -passout pass:{{ password | default('') }} \
+        -out {{ dest }}
+    creates: "{{ dest }}"

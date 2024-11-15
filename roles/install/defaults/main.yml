@@ -1,0 +1,14 @@
+---
+install_cfssl_defaults:
+  install_dir: "{{ lookup('env', 'HOME') }}/.local/bin"
+  bin_dir: "{{ lookup('env', 'HOME') }}/.local/bin"
+  binary_sources:
+    # See https://github.com/cloudflare/cfssl/releases
+    cfssl: https://github.com/cloudflare/cfssl/releases/download/v1.6.4/cfssl_1.6.4_linux_amd64
+    cfssl-bundle: https://github.com/cloudflare/cfssl/releases/download/v1.6.4/cfssl-bundle_1.6.4_linux_amd64
+    cfssl-certinfo: https://github.com/cloudflare/cfssl/releases/download/v1.6.4/cfssl-certinfo_1.6.4_linux_amd64
+    cfssl-newkey: https://github.com/cloudflare/cfssl/releases/download/v1.6.4/cfssl-newkey_1.6.4_linux_amd64
+    cfssl-scan: https://github.com/cloudflare/cfssl/releases/download/v1.6.4/cfssl-scan_1.6.4_linux_amd64
+    cfssl-json: https://github.com/cloudflare/cfssl/releases/download/v1.6.4/cfssljson_1.6.4_linux_amd64
+    cfssl-mkbundle: https://github.com/cloudflare/cfssl/releases/download/v1.6.4/mkbundle_1.6.4_linux_amd64
+    cfssl-multirootca: https://github.com/cloudflare/cfssl/releases/download/v1.6.4/multirootca_1.6.4_linux_amd64

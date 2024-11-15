@@ -1,0 +1,9 @@
+---
+- name: Creating certificates ...
+  hosts:
+    - 127.0.0.1
+  vars:
+    run: create-certificate
+  roles:
+    - install
+    - generate

@@ -1,0 +1,19 @@
+---
+- name: Checking parameters to create certificate authority signing config ...
+  block:
+    - name: Check profiles is defined
+      ansible.builtin.assert:
+        that:
+          - profiles is defined and profiles | type_debug == 'dict'
+        fail_msg: Parameter 'profiles' must be defined and of type 'dict'
+    - name: Check dest is defined
+      ansible.builtin.assert:
+        that:
+          - dest is defined and dest
+        fail_msg: Parameter 'dest' must be defined
+
+- name: Creating certificate authority signing config ...
+  ansible.builtin.template:
+    src: config.json.j2
+    dest: "{{ out_dir }}/{{ dest }}"
+    mode: "0644"

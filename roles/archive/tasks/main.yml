@@ -1,0 +1,35 @@
+---
+
+- name: Collecting info ...
+  ansible.builtin.set_fact:
+    out_dir: "{{ playbook_dir }}/out/{{ hostvars[inventory_hostname]['group_names'][0] }}"
+  tags:
+    - encrypt
+    - decrypt
+
+- name: Collecting info ...
+  ansible.builtin.set_fact:
+    archive: "{{ out_dir | dirname }}/{{ out_dir | basename }}.tar.gz"
+    encrypted_archive: "{{ out_dir | dirname }}/{{ out_dir | basename }}.tar.gz.enc"
+  tags:
+    - encrypt
+    - decrypt
+
+- name: Check if encrypted archive exists ...
+  ansible.builtin.stat:
+    path: "{{ encrypted_archive }}"
+  register: encrypted_archive_stat
+
+- name: Decrypting PKI ...
+  ansible.builtin.include_tasks:
+    file: decrypt.yml
+  tags:
+    - decrypt
+  when: (run is not defined or run == "decrypt") and encrypted_archive_stat.stat.exists
+
+- name: Encrypting PKI ...
+  ansible.builtin.include_tasks:
+    file: encrypt.yml
+  tags:
+    - encrypt
+  when: run is not defined or run == "encrypt"

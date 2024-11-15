@@ -1,0 +1,40 @@
+---
+- name: Printing infos ...
+  ansible.builtin.debug:
+    msg: "{{ item }}"
+  with_items:
+    - "csr: {{ csr }} (type: {{ csr | type_debug }})"
+    - "expiry_years: {{ expiry_years }} (type: {{ expiry_years | type_debug }})"
+    - "key: {{ key }} (type: {{ key | type_debug }})"
+    - "alternative_names: {{ alternative_names | default(None) }} (type: {{ alternative_names | default(None) | type_debug }})"
+    - "is_authority: {{ is_authority }} (type: {{ is_authority | type_debug }})"
+    - "dest: {{ dest }} (type: {{ dest | type_debug }})"
+
+- name: Checking parameters to create certificate signing request config ...
+  block:
+    - name: Check CSR
+      ansible.builtin.assert:
+        that:
+          - csr is defined and csr | type_debug == 'dict'
+        fail_msg: Parameter 'csr' must be defined and of type 'dict'
+    - name: Check expiry
+      ansible.builtin.assert:
+        that:
+          - expiry_years is defined
+        fail_msg: Parameter 'expiry_years' must be defined
+    - name: Check key is defined
+      ansible.builtin.assert:
+        that:
+          - key is defined and key | type_debug == 'dict'
+        fail_msg: Parameter 'key' must be defined and of type 'dict'
+    - name: Check dest is defined
+      ansible.builtin.assert:
+        that:
+          - dest is defined
+        fail_msg: Parameter 'dest' must be defined
+
+- name: Creating certificate signing request config ...
+  ansible.builtin.template:
+    src: csr.json.j2
+    dest: "{{ out_dir }}/{{ dest }}"
+    mode: "0644"

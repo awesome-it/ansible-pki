@@ -1,0 +1,64 @@
+---
+- name: Create certificate signing request config ...
+  block:
+    - name: Collecting parameters ...
+      ansible.builtin.set_fact:
+        csr: "{{ pki.defaults.certificate_signing_request | combine(certificate.get('certificate_signing_request', {}), recursive=True) }}"
+        expiry_years: "{{ certificate.get('expiry_years', pki.defaults.expiry_years) }}"
+        key: "{{ pki.defaults.key | combine(certificate.get('key', {}), recursive=True) }}"
+        alternative_names: "{{ certificate.get('alternative_names', []) }}"
+        is_authority: false
+        dest: "{{ certificate.name }}-csr.json"
+    - name: Including create_csr.yml ...
+      ansible.builtin.include_tasks:
+        file: create_csr.yml
+
+- name: Generate certificate ...
+  block:
+    - name: Printing info ...
+      ansible.builtin.debug:
+        msg: Generating certificate for "{{ certificate.name }}" ...
+    - name: Invoking "cfssl gencert" ...
+      ansible.builtin.shell:
+        cmd: |
+          set -o pipefail
+          {{ cfssl.bin_dir }}/cfssl gencert \
+            -ca {{ out_dir }}/{{ certificate.sign_by.name }}-ca.pem \
+            -ca-key {{ out_dir }}/{{ certificate.sign_by.name }}-ca-key.pem \
+            -config {{ out_dir }}/{{ certificate.sign_by.name }}-ca-config.json \
+            -profile={{ certificate.sign_by.profile }} \
+            {{ out_dir }}/{{ certificate.name }}-csr.json | \
+          {{ cfssl.bin_dir }}/cfssl-json -bare {{ out_dir }}/{{ certificate.name }}
+        creates: "{{ out_dir }}/{{ certificate.name }}.pem"
+
+- name: Collecting facts ...
+  ansible.builtin.set_fact:
+    pkcs12: "{{ pki.defaults.pkcs12 | combine(certificate.get('pkcs12', {}), recursive=True) }}"
+    keystore: "{{ pki.defaults.keystore | combine(certificate.get('keystore', {}), recursive=True) }}"
+
+- name: Creating PKCS#12 archive ...
+  when: pkcs12.enabled or keystore.enabled
+  block:
+    - name: Collecting facts ...
+      ansible.builtin.set_fact:
+        cert: "{{ out_dir }}/{{ certificate.name }}.pem"
+        key: "{{ out_dir }}/{{ certificate.name }}-key.pem"
+        ca: "{{ out_dir }}/{{ certificate.sign_by.name + '-full-chain.pem' if keystore.get('use_full_chain', False) else '-ca.pem' }}"
+        password: "{{ pkcs12.password | default('') }}"
+        dest: "{{ out_dir }}/{{ certificate.name }}.p12"
+    - name: Including create_pkcs12.yml ...
+      ansible.builtin.include_tasks:
+        file: create_pkcs12.yml
+
+- name: Creating Java KeyStore ...
+  when: keystore.enabled
+  block:
+    - name: Collecting facts ...
+      ansible.builtin.set_fact:
+        password: "{{ keystore.password | default('') }}"
+        pkcs12: "{{ out_dir }}/{{ certificate.name }}.p12"
+        pkcs12_password: "{{ pkcs12.password | default('') }}"
+        dest: "{{ out_dir }}/{{ certificate.name }}.keystore.jks"
+    - name: Including create_keystore.yml ...
+      ansible.builtin.include_tasks:
+        file: create_keystore.yml

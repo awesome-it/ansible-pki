@@ -1,0 +1,9 @@
+---
+- name: Encrypting PKI archive ...
+  hosts:
+    - 127.0.0.1
+  vars:
+    run: encrypt
+    force: false
+  roles:
+    - archive

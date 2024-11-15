@@ -1,0 +1,47 @@
+---
+- name: Printing infos ...
+  ansible.builtin.debug:
+    msg: "{{ item }}"
+  with_items:
+    - "alias: {{ alias }} (type: {{ alias | type_debug }})"
+    - "ca: {{ ca }} (type: {{ ca | type_debug }})"
+    - "dest: {{ dest }} (type: {{ dest | type_debug }})"
+
+- name: Checking for Keytool binary to be available ...
+  ansible.builtin.command:
+    cmd: which keytool
+  register: keytool_bin
+  changed_when: false
+
+- name: Checking parameters to create a Java TrustStore ...
+  block:
+    - name: Checking if the keytool binary is available ...
+      ansible.builtin.assert:
+        that: keytool_bin.rc == 0
+        fail_msg: Command "keytool" not found but is required to create Java KeyStores
+    - name: Checking for alias to be defined ...
+      ansible.builtin.assert:
+        that: alias is defined
+        fail_msg: Parameter 'alias' must be defined
+    - name: Checking for ca to be defined ...
+      ansible.builtin.assert:
+        that:
+          - ca is defined
+        fail_msg: Parameter 'ca' must be defined as a path to a authority certificate to include
+    - name: Checking for dest to be defined ...
+      ansible.builtin.assert:
+        that:
+          - dest is defined
+        fail_msg: Parameter 'dest' must be defined
+
+- name: Invoking keytool ...
+  ansible.builtin.shell:
+    cmd: |
+      keytool -import \
+        -noprompt \
+        -keystore {{ dest }} \
+        -alias "{{ alias }}" \
+        -trustcacerts \
+        -storepass "{{ password | default('') }}" \
+        -file "{{ ca }}"
+    creates: "{{ dest }}"

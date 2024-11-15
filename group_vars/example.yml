@@ -1,0 +1,87 @@
+---
+pki:
+  defaults:
+    certificate_signing_request: # CSR, see https://en.wikipedia.org/wiki/Certificate_signing_request
+      country: DE
+      locality: Karlsruhe
+      organization: awesome information technology GmbH
+      organizational_unit: IT
+      state: Baden-Wuerttemberg
+      email_address: info@awesome-it.de
+    expiry_years: 10
+    key:
+      algorithm: rsa
+      size: 4096
+
+    # Create keystore for certificates
+    keystore:
+      enabled: false
+      # Created with: ansible-vault encrypt_string $(passwd-gen 64)
+      password: # !vault | ...
+  authorities:
+    - name: root
+      # Overwrite defaults from above
+      certificate_signing_request:
+        common_name: Example Root CA
+      signing_profiles:
+        intermediate_ca:
+          expiry_years: 10
+          usages:
+            - signing
+            - digital signature
+            - key encipherment
+            - cert sign
+            - crl sign
+            - server auth
+            - client auth
+          ca_constraint:
+            max_path_len: 0
+            max_path_len_zero: true
+    - name: intermediate
+      sign_by:
+        name: root
+        profile: intermediate_ca
+      # Overwrite defaults from above
+      certificate_signing_request:
+        common_name: Example Intermediate CA
+      signing_profiles:
+        client:
+          expiry_years: 10
+          usages:
+            - signing
+            - key encipherment
+            - client auth
+        server:
+          expiry_years: 10
+          usages:
+            - signing
+            - key encipherment
+            - server auth
+            - client auth
+      truststore:
+        enabled: false
+        alias: CARoot
+        # Created with: ansible-vault encrypt_string $(passwd-gen 64)
+        password: # !vault | ...
+        use_full_chain: true
+
+  certificates:
+
+    - name: server-cert-1
+      sign_by:
+        name: intermediate
+        profile: server
+      certificate_signing_request:
+        common_name: server-cert-1.example.org
+      alternative_names:
+        - server-cert-1.a.example.org
+        - server-cert-1.b.example.org
+
+    - name: client-cert-1
+      sign_by:
+        name: intermediate
+        profile: client
+      certificate_signing_request:
+        common_name: client-cert-1.example.org
+      alternative_names:
+        - client-cert-1.a.example.org

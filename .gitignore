@@ -1,0 +1,8 @@
+*.retry
+.idea
+.venv
+ansible.log
+debug
+ansible.cfg
+env
+out/*/**

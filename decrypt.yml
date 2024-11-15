@@ -1,0 +1,9 @@
+---
+- name: Decrypting PKI archive ...
+  hosts:
+    - 127.0.0.1
+  vars:
+    run: decrypt
+    force: false
+  roles:
+    - archive

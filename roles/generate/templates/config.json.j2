@@ -1,0 +1,13 @@
+{
+  "signing": {
+    "profiles": {
+      {% for name, profile in profiles.items() -%}
+      {%- set _=profile.__setitem__("expiry", (profile.expiry_years * 24 * 365) ~ 'h') -%}
+      {%- set _=profile.__delitem__("expiry_years") -%}
+      "{{ name }}":
+      {{ profile | to_nice_json | indent(6) }}{%- if not loop.last %},{% endif %}
+
+      {% endfor -%}
+    }
+  }
+}

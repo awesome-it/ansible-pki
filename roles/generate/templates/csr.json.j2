@@ -1,0 +1,26 @@
+
+{
+    "CN": "{{ csr.common_name }}",
+    "names": [{
+        "C": "{{ csr.country }}",
+        "L": "{{ csr.locality }}",
+        "O": "{{ csr.organization }}",
+        "OU": "{{ csr.organizational_unit }}",
+        "ST": "{{ csr.state }}"
+    }],
+    "key": {
+        "algo": "{{ key.algorithm }}",
+        "size": {{ key.size | int }}
+    }
+    {% if is_authority %},
+    "ca": {
+        "expiry": "{{ expiry_years|int * 365 * 24 }}h"
+    }
+    {% endif %}
+    {% if alternative_names is defined %},
+    "hosts": [
+        "{{ csr.common_name }}",
+        {% for n in alternative_names %}"{{ n }}"{% if not loop.last %},{% endif %}{% endfor %}
+    ]
+    {% endif %}
+}

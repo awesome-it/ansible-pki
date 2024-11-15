@@ -1,0 +1,95 @@
+---
+pki:
+  defaults:
+    # CSR, see https://en.wikipedia.org/wiki/Certificate_signing_request
+    certificate_signing_request:
+      country: DE
+      locality: Karlsruhe
+      organization: awesome information technology GmbH
+      organizational_unit: IT
+      state: Baden-Wuerttemberg
+      email_address: info@awesome-it.de
+    expiry_years: 10
+    key:
+      algorithm: rsa
+      size: 4096
+
+    # Create pkcs12 archives for the certificates (requires OpenSSL to be available)
+    pkcs12:
+      enable: false
+      password: # leave blank to skip password protection
+
+  authorities:
+    - name: root
+      # Overwrite defaults from above
+      certificate_signing_request:
+        common_name: Root CA
+      signing_profiles:
+        intermediate_ca:
+          expiry_years: 10
+          usages:
+            - signing
+            - digital signature
+            - key encipherment
+            - cert sign
+            - crl sign
+            - server auth
+            - client auth
+          ca_constraint:
+            is_ca: true
+            max_path_len: 0
+            max_path_len_zero: true
+    - name: intermediate
+      sign_by:
+        name: root
+        profile: intermediate_ca
+      # Overwrite defaults from above
+      certificate_signing_request:
+        common_name: Intermediate CA
+      signing_profiles:
+        client:
+          expiry_years: 10
+          usages:
+            - signing
+            - key encipherment
+            - client auth
+        server:
+          expiry_years: 10
+          usages:
+            - signing
+            - key encipherment
+            - server auth
+            - client auth
+
+      # Create a Java TrustStore for the intermediate CA
+      truststore:
+        enabled: true
+        alias: # Default is the name of the authority
+        # TODO: Encrypt password
+        password: test123
+        # Import the full chain including the root CA. Set false
+        # to include only the intermediate CA (not recommended).
+        use_full_chain: true
+
+  certificates:
+    - name: client-01
+      sign_by:
+        name: intermediate
+        profile: server
+      certificate_signing_request:
+        # Overwrite defaults from authority (referenced by sign_by)
+        common_name: client-01
+      alternative_names:
+        - client-1
+        - client-01.example.com
+        - localhost
+
+      # Create a Java KeyStore for the client certificate
+      keystore:
+        enabled: true
+        name: # Default is the name of the authority
+        # TODO: Encrypt password
+        password: test123
+        # Import the full chain including the root CA. Set false
+        # to include only the intermediate CA (not recommended).
+        use_full_chain: true
