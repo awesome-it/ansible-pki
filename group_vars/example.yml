@@ -67,7 +67,6 @@ pki:
         use_full_chain: true
 
   certificates:
-
     - name: server-cert-1
       sign_by:
         name: intermediate
