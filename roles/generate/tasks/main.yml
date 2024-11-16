@@ -37,6 +37,7 @@
   tags:
     - create_authority
     - create_certificate
+  when: run is not defined or run == "create-authority" or run == "create-certificate"
 
 - name: Create certificate authority ...
   ansible.builtin.include_tasks:

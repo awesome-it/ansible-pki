@@ -1,5 +1,4 @@
 ---
-
 - name: Collecting facts ...
   ansible.builtin.set_fact:
     pki: "{{ generate_pki_defaults | combine(pki if pki is defined else {}, recursive=True) }}"
