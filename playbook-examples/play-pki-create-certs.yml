@@ -1,0 +1,10 @@
+---
+- name: Creating certificates ..
+  connection: local
+  hosts: <group>
+  run_once: true
+  vars:
+    run: create-certificate
+  roles:
+    - role: shared/pki/roles/install
+    - role: shared/pki/roles/generate

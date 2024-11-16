@@ -1,0 +1,10 @@
+---
+- name: Creating authorities ...
+  connection: local
+  hosts: <group>
+  run_once: true
+  vars:
+    run: create-authority
+  roles:
+    - role: shared/pki/roles/install
+    - role: shared/pki/roles/generate

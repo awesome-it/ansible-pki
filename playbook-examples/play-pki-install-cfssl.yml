@@ -1,0 +1,8 @@
+---
+- name: Installing cfssl ...
+  connection: local
+  hosts: 127.0.0.1
+  vars:
+    run: install-cfssl
+  roles:
+    - role: shared/pki/roles/install

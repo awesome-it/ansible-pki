@@ -3,4 +3,6 @@ all:
   children:
     example:
       hosts:
-        localhost:
+        example-1.host.net:
+        example-2.host.net:
+        example-3.host.net:

@@ -11,7 +11,7 @@ You can run the following to install CFSSL **locally**:
 ansible-playbook install-cfssl.yml
 ```
 
-## Certificate Authority & Certificates
+## Howto create Certificate Authority & Certificates
 
 The configuration for certificate for authorities and certificates can be defined in `pki.authorities` and `pki.certificates`
 as described in the defaults in `roles/generate/defaults/main.yml`. 
@@ -56,3 +56,44 @@ Further `decrypt.yml` and `encrypt.yml` won't overwrite existing files, so you h
 `force: true` in the playbook file.
 
 If all else fails, you still have Git.
+
+## Howto to use in an existing Ansible Repository
+
+Assuming the following setup:
+
+* Your Ansible repo is in `~/myrepo`
+* You have a group `dev` with hosts that require the PKI
+* You want to create your PKI (including CA and certs) to `~/myrepo/group_vars/dev/pki`
+
+You can do the following:
+
+* Add the PKI repo as a submodule i.e. to `~/myrepo/shared/pki`:
+    ```shell
+    cd ~/myrepo
+    git submodule add https://github.com/awesome-it/ansible-pki.git shared/pki
+    ```
+* Add the PKI config to `group_vars/dev/pki.yml`:
+    ```shell
+    cp ~/myrepo/shared/pki/group_vars.example.yml ~/myrepo/group_vars/dev/pki.yml
+    ```
+* Edit and adopt`group_vars/dev/pki.yml` to your needs.
+* Copy the example playbooks to your Ansible Repo and replace `<group>` with `dev`:
+    ```shell
+    cp ~/myrepo/shared/pki/playbook-example/play-pki-*.yml ~/myrepo
+    sed -i 's/<group>/dev/g' ~/myrepo/play-pki-*.yml
+    ```
+* Set the `out_dir` in the playbooks to `group_vars/dev/pki.yml`:
+    ```yaml
+    ---
+    pki:
+      out_dir: "{{ inventory_dir }}/../group_vars/dev/pki"
+      default: ...
+    ```
+* Run the playbooks as described above:
+  * `ansible-playbook play-pki-install-cfssl.yml`: Install CFSSL tools to `~/.local/bin`. 
+  * `ansible-playbook play-pki-decrypt.yml`: Decrypt a potentially existing encrypted PKI.
+  * `ansible-playbook play-pki-create-ca.yml`: Create the configured authorities.
+  * `ansible-playbook play-pki-create-certs.yml`: Create the configured certificates.
+    * Note that this won't overwrite existing certificates. You need to manually delete a certificate in order to update
+      if i.e. to replace expired certificates.
+  * `ansible-playbook play-pki-encrypt.yml`: Encrypt the generated PKI files.
