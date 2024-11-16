@@ -1,3 +1,4 @@
+---
 - name: Printing infos ...
   ansible.builtin.debug:
     msg: "{{ item }}"
@@ -12,17 +13,17 @@
       ansible.builtin.assert:
         that:
           - out_dir is defined
-        fail_msg: "Parameter 'out_dir' must be defined"
+        fail_msg: Parameter "out_dir" must be defined
     - name: Checking for archive to be defined ...
       ansible.builtin.assert:
         that:
           - archive is defined
-        fail_msg: "Parameter 'archive' must be defined"
+        fail_msg: Parameter "archive" must be defined
     - name: Checking for encrypted_archive to be defined ...
       ansible.builtin.assert:
         that:
           - encrypted_archive is defined
-        fail_msg: "Parameter 'encrypted_archive' must be defined"
+        fail_msg: Parameter "encrypted_archive" must be defined
 
 - name: Make sure that the destination directory does not exist yet ...
   block:
@@ -34,7 +35,7 @@
       ansible.builtin.assert:
         that:
           - out_dir_stat.stat.exists == false
-        fail_msg: "Destination directory \"{{ out_dir }}\" already exists. Remove it by hand or set \"force: true\" to overwrite files in this director<."
+        fail_msg: 'Destination directory "{{ out_dir }}" already exists. Remove it by hand or set "force: true" to overwrite files in this director<.'
       when: force is not defined or force is false
 
 - name: Decrypting and extracting PKI ...
@@ -42,7 +43,7 @@
     - name: Decrypting archive ...
       ansible.builtin.command:
         chdir: "{{ playbook_dir }}"
-        cmd: "ansible-vault decrypt {{ encrypted_archive }} --output {{ archive }}"
+        cmd: ansible-vault decrypt {{ encrypted_archive }} --output {{ archive }}
         creates: "{{ archive }}"
 
     - name: Creating destination directory ...

@@ -1,16 +1,44 @@
 ---
-
-- name: Collecting info ...
+- name: Collecting facts ...
   ansible.builtin.set_fact:
-    out_dir: "{{ playbook_dir }}/out/{{ hostvars[inventory_hostname]['group_names'][0] }}"
+    pki: "{{ generate_pki_defaults | combine(pki if pki is defined else {}, recursive=True) }}"
   tags:
     - encrypt
     - decrypt
 
-- name: Collecting info ...
+- name: Determining out dir ...
+  ansible.builtin.set_fact:
+    out_dir: "{{ playbook_dir }}/out/{{ hostvars[inventory_hostname]['group_names'][0] }}"
+  when: pki.out_dir is not defined
+  tags:
+    - encrypt
+    - decrypt
+
+- name: Retrieving out dir from pki config ...
+  ansible.builtin.set_fact:
+    out_dir: "{{ pki.out_dir }}"
+  when: pki.out_dir is defined
+  tags:
+    - encrypt
+    - decrypt
+
+- name: Collecting facts ...
   ansible.builtin.set_fact:
     archive: "{{ out_dir | dirname }}/{{ out_dir | basename }}.tar.gz"
     encrypted_archive: "{{ out_dir | dirname }}/{{ out_dir | basename }}.tar.gz.enc"
+  tags:
+    - encrypt
+    - decrypt
+
+- name: Printing paths ...
+  ansible.builtin.debug:
+    msg: "{{ path }}"
+  with_items:
+    - "out_dir: {{ out_dir }}"
+    - "archive: {{ archive }}"
+    - "encrypted_archive: {{ encrypted_archive }}"
+  loop_control:
+    loop_var: path
   tags:
     - encrypt
     - decrypt

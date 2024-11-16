@@ -35,6 +35,7 @@ pki:
             - server auth
             - client auth
           ca_constraint:
+            is_ca: true
             max_path_len: 0
             max_path_len_zero: true
     - name: intermediate
@@ -66,7 +67,6 @@ pki:
         use_full_chain: true
 
   certificates:
-
     - name: server-cert-1
       sign_by:
         name: intermediate

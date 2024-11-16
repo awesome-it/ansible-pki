@@ -1,10 +1,11 @@
 ---
 - name: Decrypting PKI archive ...
-  hosts: example
-  run_once: true
   connection: local
+  hosts: <group>
+  run_once: true
   vars:
     run: decrypt
     force: false
   roles:
-    - archive
+    - role: shared/pki/roles/generate
+    - role: shared/pki/roles/archive

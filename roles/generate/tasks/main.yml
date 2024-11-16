@@ -2,7 +2,29 @@
 - name: Collecting facts ...
   ansible.builtin.set_fact:
     pki: "{{ generate_pki_defaults | combine(pki if pki is defined else {}, recursive=True) }}"
+  tags:
+    - create_authority
+    - create_certificate
+
+- name: Determining out dir ...
+  ansible.builtin.set_fact:
     out_dir: "{{ playbook_dir }}/out/{{ hostvars[inventory_hostname]['group_names'][0] }}"
+  when: pki.out_dir is not defined
+  tags:
+    - create_authority
+    - create_certificate
+
+- name: Retrieving out dir from pki config ...
+  ansible.builtin.set_fact:
+    out_dir: "{{ pki.out_dir }}"
+  when: pki.out_dir is defined
+  tags:
+    - create_authority
+    - create_certificate
+
+- name: Printing out dir ...
+  ansible.builtin.debug:
+    msg: "Output directory: {{ out_dir }}"
   tags:
     - create_authority
     - create_certificate
@@ -15,6 +37,7 @@
   tags:
     - create_authority
     - create_certificate
+  when: run is not defined or run == "create-authority" or run == "create-certificate"
 
 - name: Create certificate authority ...
   ansible.builtin.include_tasks:

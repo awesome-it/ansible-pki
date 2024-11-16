@@ -1,10 +1,11 @@
 ---
 - name: Encrypting PKI archive ...
-  hosts: example
-  run_once: true
   connection: local
+  hosts: <group>
+  run_once: true
   vars:
     run: encrypt
     force: false
   roles:
-    - archive
+    - role: shared/pki/roles/generate
+    - role: shared/pki/roles/archive
